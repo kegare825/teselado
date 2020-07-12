@@ -1,16 +1,11 @@
-from infrastructure import *
-from config import *
-import pandas as pd
+from infrastructure import query
+from MyKmeans import K_Means
 import numpy as np
-from pyclustering.cluster.kmeans import kmeans, kmeans_visualizer
-from pyclustering.cluster.center_initializer import kmeans_plusplus_initializer
-from pyclustering.utils.metric import type_metric, distance_metric
-from pyclustering.samples.definitions import FCPS_SAMPLES
-from pyclustering.utils import read_sample
-from config import *
-import osmnx as ox
-import networkx as nx
-
+import shapely
+import matplotlib.pyplot as plt
+from matplotlib import style
+import folium
+#import osmnx as ox
 
 df = query(qrestaurants)
               
@@ -54,17 +49,8 @@ plt.show()
 '''
 
 
-
-
-
-
-
-
-
-
-class Soultion(self):
+class Soultion:
     pass
-
 
 
 pol0 = []
@@ -88,16 +74,11 @@ for i in range(len(sampling_space)): #Cambiar a nditer
     else:
         pass        
 
-
 hull = shapely.geometry.MultiPoint(pol0).convex_hull.exterior._get_coords()
 
 vertices = [list(v) for v in zip(hull.xy[0],hull.xy[1])]
 
-
 plt.plot(hull.xy[1], hull.xy[0])
-
-
-
 
 
 style.use('ggplot')
@@ -124,7 +105,6 @@ for classification in model.classifications:
                             color = color).add_to(mapBCN) 
 
 
-        
 for centroid in model.centroids:
     lat = model.centroids[centroid][0]
     lon = model.centroids[centroid][1]
