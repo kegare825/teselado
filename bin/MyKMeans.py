@@ -111,13 +111,13 @@ class K_Means:
 
         Parameters
         ----------
-        data : TYPE
-            DESCRIPTION.
+        data : np.array
+            Assigns clusters to data.
 
         Returns
         -------
-        classification : TYPE
-            DESCRIPTION.
+        classification : np.array
+            Vector of labels assigning clusters.
 
         """
         distances = [np.linalg.norm(data-self.__centroids[centroid]) 

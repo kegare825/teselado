@@ -1,10 +1,11 @@
 from infrastructure import query
-from MyKmeans import K_Means
+from MyKMeans import K_Means
 import numpy as np
 import shapely
 import matplotlib.pyplot as plt
 from matplotlib import style
 import folium
+from config import *
 #import osmnx as ox
 
 df = query(qrestaurants)
@@ -48,7 +49,7 @@ for i in range(len(sampling_space)): #Cambiar a nditer
 plt.show()        
 '''
 
-
+'''
 class Soultion:
     pass
 
@@ -79,7 +80,7 @@ hull = shapely.geometry.MultiPoint(pol0).convex_hull.exterior._get_coords()
 vertices = [list(v) for v in zip(hull.xy[0],hull.xy[1])]
 
 plt.plot(hull.xy[1], hull.xy[0])
-
+'''
 
 style.use('ggplot')
 colors = ['blue', 'yellow','red']
@@ -95,7 +96,7 @@ for centroid in model.centroids:
     
 plt.show() 
 
-     
+'''    
 mapBCN = folium.Map(location=[41.4469 ,2.2324 ],zoom_start = 10) 
 colors = ['blue', 'yellow','red']
 for classification in model.classifications:
@@ -112,3 +113,4 @@ for centroid in model.centroids:
     folium.Marker(location = [model.centroids[centroid][0], model.centroids[centroid][1]], popup = coordenadas, icon=folium.Icon(color='red', icon='info-sign')).add_to(mapBCN)      
         
 mapBCN.save('mapa_rest.html')
+'''
