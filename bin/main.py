@@ -1,16 +1,12 @@
-from infrastructure import *
-from config import *
-import pandas as pd
+from infrastructure import query
+from MyKMeans import K_Means
 import numpy as np
-from pyclustering.cluster.kmeans import kmeans, kmeans_visualizer
-from pyclustering.cluster.center_initializer import kmeans_plusplus_initializer
-from pyclustering.utils.metric import type_metric, distance_metric
-from pyclustering.samples.definitions import FCPS_SAMPLES
-from pyclustering.utils import read_sample
+import shapely
+import matplotlib.pyplot as plt
+from matplotlib import style
+import folium
 from config import *
-import osmnx as ox
-import networkx as nx
-
+#import osmnx as ox
 
 df = query(qrestaurants)
               
@@ -53,18 +49,9 @@ for i in range(len(sampling_space)): #Cambiar a nditer
 plt.show()        
 '''
 
-
-
-
-
-
-
-
-
-
-class Soultion(self):
+'''
+class Soultion:
     pass
-
 
 
 pol0 = []
@@ -88,17 +75,12 @@ for i in range(len(sampling_space)): #Cambiar a nditer
     else:
         pass        
 
-
 hull = shapely.geometry.MultiPoint(pol0).convex_hull.exterior._get_coords()
 
 vertices = [list(v) for v in zip(hull.xy[0],hull.xy[1])]
 
-
 plt.plot(hull.xy[1], hull.xy[0])
-
-
-
-
+'''
 
 style.use('ggplot')
 colors = ['blue', 'yellow','red']
@@ -114,7 +96,7 @@ for centroid in model.centroids:
     
 plt.show() 
 
-     
+'''    
 mapBCN = folium.Map(location=[41.4469 ,2.2324 ],zoom_start = 10) 
 colors = ['blue', 'yellow','red']
 for classification in model.classifications:
@@ -124,7 +106,6 @@ for classification in model.classifications:
                             color = color).add_to(mapBCN) 
 
 
-        
 for centroid in model.centroids:
     lat = model.centroids[centroid][0]
     lon = model.centroids[centroid][1]
@@ -132,3 +113,4 @@ for centroid in model.centroids:
     folium.Marker(location = [model.centroids[centroid][0], model.centroids[centroid][1]], popup = coordenadas, icon=folium.Icon(color='red', icon='info-sign')).add_to(mapBCN)      
         
 mapBCN.save('mapa_rest.html')
+'''
