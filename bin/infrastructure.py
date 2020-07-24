@@ -16,6 +16,12 @@ def query(query_string: str) -> pd.DataFrame:
     return query_job.result().to_dataframe()
 
 
+#TODO Mirar como introducir metricas personalizadas en la libreria
+def metrica(centroide, punto):
+    nodo_centroide = ox.get_nearest_node(G, (centroide))
+    nodo_punto =  ox.get_nearest_node(G, (punto))
+    return nx.shortest_path_length(G, nodo_centroide, nodo_punto) 
+
 def bounding_box(coords):
     #TODO mejorar el return para que lo acepte directamente ox.graph
     min_x = max_x = coords[0][0]

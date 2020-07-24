@@ -8,7 +8,7 @@ import folium
 from config import *
 #import osmnx as ox
 
-df = query(qrestaurants)
+df = query(orders)
               
 #df['order_coordinates'] = list(zip(df.order_latitude, df.order_longitude))
 #df['restaurant_coordinates'] = list(zip(df.rlat, df.rlon))
