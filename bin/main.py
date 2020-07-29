@@ -8,8 +8,18 @@ import folium
 from config import *
 #import osmnx as ox
 
-df = query(qrestaurants)
-              
+
+def query(query_string: str) -> pd.DataFrame:
+    """Query."""
+    client = bigquery.Client(project='REDACTED_GCP_PROJECT')
+    job_config = bigquery.QueryJobConfig()
+    query_job = client.query(query_string, job_config=job_config)
+    return query_job.result().to_dataframe()
+
+df = query(orders)
+   
+
+           
 #df['order_coordinates'] = list(zip(df.order_latitude, df.order_longitude))
 #df['restaurant_coordinates'] = list(zip(df.rlat, df.rlon))
 

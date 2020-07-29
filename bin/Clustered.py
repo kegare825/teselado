@@ -1,0 +1,90 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jul 24 19:07:16 2020
+
+@author: aaron.gonzalez
+"""
+from pyclustering.cluster.kmeans import kmeans, kmeans_visualizer
+from pyclustering.cluster.center_initializer import kmeans_plusplus_initializer
+from pyclustering.cluster import cluster_visualizer
+from pyclustering.cluster.fcm import fcm
+from infrastructure import boundingbox
+import numpy as np
+
+
+class Clusterer:
+    
+    
+    def __init__(self, start=1, end=13): # metric=metrica#):
+        """
+        Class constructor
+        
+        Parameters
+        ----------
+        k : int (optional)
+            Number of clusters. The default value is 3.
+        tol : float (optional)
+            Tolerance. The default value is 0.001.
+        max_iter : int (optional)
+            Maximum number of iterations. The default value is 3000.
+        metric : function (optional)
+            Metric used in the algorithm. The default value is the lambda
+            function lambda c, e : 1.3*np.linalg.norm(e - c).
+            
+        Returns
+        -------
+        Constructed K_Means class.
+        """
+        self.__start = start
+        self.__end = end
+        self.__dabest = []
+        
+    
+    def __kmeans(self, points):
+
+        # Prepare initial centers using K-Means++ method.
+        initial_centers = kmeans_plusplus_initializer(points, 10).initialize()
+        # Create instance of K-Means algorithm with prepared centers.
+        self.__kmeans_instance = kmeans(sample, initial_centers)
+        # Run cluster analysis and obtain results.
+        kmeans_instance.process()
+        kclusters = kmeans_instance.get_clusters()
+        kcenters = kmeans_instance.get_centers()
+        return kclusters, kcenters
+
+    def __cmeans(self, points, nclusters):
+        
+        # load list of points for cluster analysis
+        # initialize
+        initial_centers = kmeans_plusplus_initializer(points, nclusters, kmeans_plusplus_initializer.FARTHEST_CENTER_CANDIDATE).initialize()
+        # create instance of Fuzzy C-Means algorithm
+        fcm_instance = fcm(points, initial_centers)
+        # run cluster analysis and obtain results
+        fcm_instance.process()
+        clusters = fcm_instance.get_clusters()
+        centers = fcm_instance.get_centers()
+        membership = fcm_instance.get_membership()
+        return clusters, centers, membership
+    
+    def get_clusters(self,points):
+        self.points = points
+        self.__dabest = [self.__cmeans(points,i) for i in range(self.__start,self.__end)]
+        ##self.hull = 
+        return self.__dabest
+
+
+    def teselado(self,points):
+        #muestrea todo el espacio de la envolvente para conseguir las fronteras de decision a intervalos regulares 
+        #get_hull
+        area = boundingbox(points)
+        #(min_x,min_y),(max_x,min_y),(max_x,max_y),(min_x,max_y)
+        #sample inside hull
+        lat_sample = np.arange(min_y, max_y, 0.001).tolist()
+        lon_sample = np.arange(min_x,max_x, 0.001)
+        sampling_space = [[x,y] for x in lat_sample for y in lon_sample]
+        sampling_space = np.asarray(sampling_space, dtype=np.float32)
+        prediction = kmeans_instance.predict(sampling_space)
+        pol = [[list(sampling_space[index]) for index in [i for i, j in enumerate(prediction) if j == k]] for k in range(centers)]
+        hull = [shapely.geometry.MultiPoint(pol[i]).convex_hull.exterior._get_coords() for i in range(len(pol))]
+
+

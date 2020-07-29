@@ -8,13 +8,14 @@ import osmnx as ox
 import scipy.stats as st
 from google.cloud import bigquery
 
-def query(query_string: str) -> pd.DataFrame:
-    """Query."""
-    client = bigquery.Client(project='REDACTED_GCP_PROJECT')
-    job_config = bigquery.QueryJobConfig()
-    query_job = client.query(query_string, job_config=job_config)
-    return query_job.result().to_dataframe()
 
+
+
+#TODO Mirar como introducir metricas personalizadas en la libreria
+def metrica(centroide, punto):
+    nodo_centroide = ox.get_nearest_node(G, (centroide))
+    nodo_punto =  ox.get_nearest_node(G, (punto))
+    return nx.shortest_path_length(G, nodo_centroide, nodo_punto) 
 
 def bounding_box(coords):
     #TODO mejorar el return para que lo acepte directamente ox.graph
@@ -36,10 +37,12 @@ def bounding_box(coords):
     
     return [(min_x,min_y),(max_x,min_y),(max_x,max_y),(min_x,max_y)]              
 
-def metrica(centroide, punto):
+def metrica(centroide, G):
     nodo_centroide = ox.get_nearest_node(G, (centroide))
     nodo_punto =  ox.get_nearest_node(G, (punto))
     return nx.shortest_path_length(G, nodo_centroide, nodo_punto) 
+
+import scipy.stats as st
 
 def get_best_distribution(data):
     dist_names = ["norm", "exponweib", "weibull_max", "weibull_min", "pareto", "genextreme"]
