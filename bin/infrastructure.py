@@ -7,10 +7,16 @@ import networkx as nx
 import osmnx as ox
 import scipy.stats as st
 from google.cloud import bigquery
+import osmnx as ox
+import networkx as nx
+import shapely
 
 
 
 
+#G = ox.graph_from_bbox(41.471783, 41.357930, 2.014390, 2.305203)
+# center_point = [41.405124396565796, 2.180564066230577]
+# G = ox.graph_from_point(center_point, 10000)
 #TODO Mirar como introducir metricas personalizadas en la libreria
 def metrica(centroide, punto):
     nodo_centroide = ox.get_nearest_node(G, (centroide))
@@ -37,7 +43,7 @@ def bounding_box(coords):
     
     return [(min_x,min_y),(max_x,min_y),(max_x,max_y),(min_x,max_y)]              
 
-def metrica(centroide, G):
+def metrica_g(centroide, G):
     nodo_centroide = ox.get_nearest_node(G, (centroide))
     nodo_punto =  ox.get_nearest_node(G, (punto))
     return nx.shortest_path_length(G, nodo_centroide, nodo_punto) 

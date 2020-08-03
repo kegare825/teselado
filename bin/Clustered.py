@@ -15,7 +15,7 @@ import numpy as np
 class Clusterer:
     
     
-    def __init__(self, start=1, end=13): # metric=metrica#):
+    def __init__(self, start=60, end=13): # metric=metrica#):
         """
         Class constructor
         
@@ -41,7 +41,17 @@ class Clusterer:
         
     
     def __kmeans(self, points):
-
+        """
+        Returns clusterization of dataset
+        
+        Parameters
+        ----------
+        points: list 
+                        
+        Returns
+        -------
+        Labeled class and center location
+        """
         # Prepare initial centers using K-Means++ method.
         initial_centers = kmeans_plusplus_initializer(points, 10).initialize()
         # Create instance of K-Means algorithm with prepared centers.
@@ -53,7 +63,17 @@ class Clusterer:
         return kclusters, kcenters
 
     def __cmeans(self, points, nclusters):
+        """
+        Returns fuzzy clusterization of dataset
         
+        Parameters
+        ----------
+        points: list 
+                        
+        Returns
+        -------
+        Labeled class, membership,  and center location
+        """
         # load list of points for cluster analysis
         # initialize
         initial_centers = kmeans_plusplus_initializer(points, nclusters, kmeans_plusplus_initializer.FARTHEST_CENTER_CANDIDATE).initialize()
@@ -67,6 +87,17 @@ class Clusterer:
         return clusters, centers, membership
     
     def get_clusters(self,points):
+        """
+        Returns clusterization of dataset
+        
+        Parameters
+        ----------
+        points: list 
+                        
+        Returns
+        -------
+        Returns best clusters candidates
+        """
         self.points = points
         self.__dabest = [self.__cmeans(points,i) for i in range(self.__start,self.__end)]
         ##self.hull = 
@@ -74,6 +105,19 @@ class Clusterer:
 
 
     def teselado(self,points):
+        """
+        Uses former clusteriation results to return an aproximate Voronoi
+        tesselation of the city.
+        
+        Parameters
+        ----------
+        points: list
+            
+        Returns
+        -------
+        hull: list of the convex hull for each sample
+        
+        """
         #muestrea todo el espacio de la envolvente para conseguir las fronteras de decision a intervalos regulares 
         #get_hull
         area = boundingbox(points)
