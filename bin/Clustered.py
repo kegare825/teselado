@@ -12,21 +12,19 @@ from infrastructure import boundingbox
 import numpy as np
 
 
-class Clusterer:
+class Clustered:
     
     
-    def __init__(self, start=60, end=13): # metric=metrica#):
+    def __init__(self, start=60, end=80): # metric=metrica#):
         """
         Class constructor
         
         Parameters
         ----------
-        k : int (optional)
-            Number of clusters. The default value is 3.
-        tol : float (optional)
-            Tolerance. The default value is 0.001.
-        max_iter : int (optional)
-            Maximum number of iterations. The default value is 3000.
+        start : int 
+            starting number of clusters
+        end : int (optional)
+            Ending number of clusters
         metric : function (optional)
             Metric used in the algorithm. The default value is the lambda
             function lambda c, e : 1.3*np.linalg.norm(e - c).
@@ -84,7 +82,7 @@ class Clusterer:
         clusters = fcm_instance.get_clusters()
         centers = fcm_instance.get_centers()
         membership = fcm_instance.get_membership()
-        return clusters, centers, membership
+        return cclusters, ccenters, membership
     
     def get_clusters(self,points):
         """
