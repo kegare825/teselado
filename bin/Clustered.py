@@ -2,7 +2,7 @@
 """
 Created on Fri Jul 24 19:07:16 2020
 
-@author: aaron.gonzalez
+@author: Carlos Morera & Aaron
 """
 from pyclustering.cluster.kmeans import kmeans, kmeans_visualizer
 from pyclustering.cluster.center_initializer import kmeans_plusplus_initializer
