@@ -11,10 +11,18 @@ import osmnx as ox
 import networkx as nx
 import shapely
 
+def query(query_string: str) -> pd.DataFrame:
+    """Query."""
+    from google.cloud import bigquery
+    default_project_id = 'REDACTED_GCP_PROJECT'
+    client = bigquery.Client(project=default_project_id)
+    job_config = bigquery.QueryJobConfig()
+    query_job = client.query(query_string, job_config=job_config)
+    return query_job.result().to_dataframe()
 
 
 
-#G = ox.graph_from_bbox(41.471783, 41.357930, 2.014390, 2.305203)
+# zG = ox.graph_from_bbox(41.471783, 41.357930, 2.014390, 2.305203)
 # center_point = [41.405124396565796, 2.180564066230577]
 # G = ox.graph_from_point(center_point, 10000)
 #TODO Mirar como introducir metricas personalizadas en la libreria
