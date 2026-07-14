@@ -1,22 +1,18 @@
-"""Utility functions for geo and statistical analysis."""
+"""Geospatial and statistical utility functions."""
 
 import scipy.stats as st
 
 
 def bounding_box(coords):
-    """Return the axis-aligned bounding box corners for a list of (x, y) coords."""
+    """Return axis-aligned bounding box corners for a list of (x, y) coordinates."""
     min_x = max_x = coords[0][0]
     min_y = max_y = coords[0][1]
 
-    for item in coords:
-        if item[0] < min_x:
-            min_x = item[0]
-        if item[0] > max_x:
-            max_x = item[0]
-        if item[1] < min_y:
-            min_y = item[1]
-        if item[1] > max_y:
-            max_y = item[1]
+    for x, y in coords:
+        min_x = min(min_x, x)
+        max_x = max(max_x, x)
+        min_y = min(min_y, y)
+        max_y = max(max_y, y)
 
     return [
         (min_x, min_y),
@@ -24,10 +20,6 @@ def bounding_box(coords):
         (max_x, max_y),
         (min_x, max_y),
     ]
-
-
-# Backwards-compatible alias used by Clustered.py (will be removed in Phase 2).
-boundingbox = bounding_box
 
 
 def get_best_distribution(data):

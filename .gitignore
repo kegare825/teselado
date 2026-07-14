@@ -47,3 +47,6 @@ Thumbs.db
 
 # Jupyter
 .ipynb_checkpoints/
+
+# History rewrite tooling (local only)
+.git-filter-replacements.txt
