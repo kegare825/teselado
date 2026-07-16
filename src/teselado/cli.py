@@ -1,3 +1,4 @@
+from enum import Enum
 from pathlib import Path
 
 import typer
@@ -15,6 +16,13 @@ app = typer.Typer(
     help="Geospatial zone tessellation and last-mile delivery simulation.",
     no_args_is_help=True,
 )
+
+
+class ClusterMethod(str, Enum):
+    """Clustering backend: hard K-Means or Fuzzy C-Means."""
+
+    kmeans = "kmeans"
+    fuzzy = "fuzzy"
 
 
 @app.command()
@@ -74,6 +82,9 @@ def run(
     city: str = typer.Option("demo", help="City label (used when generating missing data)."),
     data_dir: Path = typer.Option(Path("data/sample"), help="Input data directory."),
     output: Path = typer.Option(Path("outputs"), help="Output directory."),
+    method: ClusterMethod = typer.Option(
+        ClusterMethod.kmeans, help="Clustering backend: kmeans or fuzzy."
+    ),
     k_min: int = typer.Option(3, help="Minimum k for auto selection."),
     k_max: int = typer.Option(8, help="Maximum k for auto selection."),
     grid_step: float | None = typer.Option(None, help="Tessellation grid step in degrees."),
@@ -87,12 +98,13 @@ def run(
         data_dir=data_dir,
         output_dir=output,
         city=city,
+        method=method.value,
         k_min=k_min,
         k_max=k_max,
         grid_step=grid_step,
     )
     result = run_pipeline(cfg)
-    typer.echo(f"Selected k={result.k}, zones={len(result.zones)}")
+    typer.echo(f"Selected k={result.k}, zones={len(result.zones)}, method={method.value}")
     typer.echo(f"Wrote {result.output_dir / 'zones.geojson'}")
     typer.echo(f"Wrote {result.output_dir / 'report.json'}")
     typer.echo(f"Wrote {result.output_dir / 'map.html'}")
@@ -100,6 +112,12 @@ def run(
     typer.echo(f"Avg delivery time: {result.metrics['avg_delivery_time_min']} min")
     typer.echo(f"Orders/hour: {result.metrics.get('orders_per_hour', 0)}")
     typer.echo(f"Courier utilisation: {result.metrics.get('courier_utilisation', 0)}")
+    if "boundary_ambiguity" in result.metrics:
+        amb = result.metrics["boundary_ambiguity"]
+        typer.echo(
+            f"Boundary ambiguity: {amb['boundary_point_ratio'] * 100:.1f}% of orders "
+            f"sit near a zone edge (mean membership margin {amb['mean_margin']})"
+        )
 
 
 @app.command()
@@ -129,14 +147,25 @@ def cluster(
     input: Path = typer.Option(Path("data/sample"), "--input", help="Input data directory."),
     k: int = typer.Option(5, help="Fixed number of clusters."),
     output: Path = typer.Option(Path("outputs"), help="Output directory."),
+    method: ClusterMethod = typer.Option(
+        ClusterMethod.kmeans, help="Clustering backend: kmeans or fuzzy."
+    ),
     grid_step: float | None = typer.Option(None, help="Tessellation grid step."),
 ) -> None:
     """Run clustering and tessellation with a fixed k."""
-    result = run_cluster_only(input, k=k, output_dir=output, grid_step=grid_step or 0.003)
-    typer.echo(f"k={result.k}, zones={len(result.zones)}")
+    result = run_cluster_only(
+        input, k=k, output_dir=output, grid_step=grid_step or 0.003, method=method.value
+    )
+    typer.echo(f"k={result.k}, zones={len(result.zones)}, method={method.value}")
     typer.echo(f"Wrote {result.output_dir / 'zones.geojson'}")
     typer.echo(f"Wrote {result.output_dir / 'map.html'}")
     typer.echo(f"Wrote {result.output_dir / 'dashboard.html'}")
+    if "boundary_ambiguity" in result.metrics:
+        amb = result.metrics["boundary_ambiguity"]
+        typer.echo(
+            f"Boundary ambiguity: {amb['boundary_point_ratio'] * 100:.1f}% of orders "
+            f"sit near a zone edge (mean membership margin {amb['mean_margin']})"
+        )
 
 
 @app.command()

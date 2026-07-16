@@ -32,7 +32,7 @@ flowchart LR
 ```
 
 1. **Ingest** synthetic restaurants and orders (Parquet, seed=42)
-2. **Cluster** delivery coordinates with K-Means and automatic k selection
+2. **Cluster** delivery coordinates with K-Means (or Fuzzy C-Means) and automatic k selection
 3. **Tessellate** the city into zone polygons via grid sampling
 4. **Simulate** a discrete-event delivery process with greedy courier assignment
 5. **Export** GeoJSON, JSON metrics, Folium map, and HTML dashboard
@@ -43,7 +43,7 @@ See [docs/architecture.md](docs/architecture.md) for design decisions and trade-
 
 | Layer | Tools |
 |-------|-------|
-| DS | K-Means, elbow k-selection, haversine distances |
+| DS | K-Means, Fuzzy C-Means, elbow k-selection, haversine distances |
 | DE | Typer CLI, Parquet, pydantic-settings, reproducible pipeline |
 | BI | `report.json`, `dashboard.html`, interactive `map.html` |
 | Viz | Folium, Shapely, GeoJSON |
@@ -73,7 +73,8 @@ xdg-open outputs/dashboard.html  # KPI dashboard
 ```bash
 teselado generate --city demo --restaurants 50 --orders 500
 teselado run --k-min 3 --k-max 8
-teselado cluster --k 5
+teselado run --method fuzzy         # Fuzzy C-Means: adds boundary_ambiguity to report.json
+teselado cluster --k 5 --method fuzzy
 teselado compare --k-values 3,5,8
 teselado viz
 teselado info
@@ -123,9 +124,38 @@ src/teselado/
 └── pipeline.py    # orchestration
 ```
 
+## Why Fuzzy C-Means for zone boundaries?
+
+Zone partitioning is not actually a hard-boundary problem. An order placed
+two streets from the edge of "Zone A" doesn't stop belonging to Zone A the
+instant it crosses a line drawn by K-Means — it has *partial* affinity to
+both neighbouring zones, and that ambiguity is real operational information,
+not noise.
+
+**Fuzzy C-Means keeps that information instead of discarding it.** Every
+order gets a degree of membership to *every* zone (not just a 0/1 label), so
+the model can answer a question hard K-Means structurally cannot: *how many
+of my orders are actually borderline, and by how much?*
+
+That turns into a concrete, testable KPI — `boundary_ambiguity` in
+`report.json` — reporting the share of orders whose top-1 vs. top-2 zone
+membership is too close to call. On the bundled sample it flags a real,
+non-trivial share of demand as "genuinely ambiguous," which is directly
+actionable for ops (e.g. *always route ambiguous orders to whichever
+neighbouring zone has spare courier capacity*, rather than being locked into
+a rigid polygon). Run `teselado run --method fuzzy` to see it end to end.
+
+This is also why the choice held up under scrutiny in production: a hard
+clustering baseline (K-Means) is the right *default* for interpretability and
+speed, but a fuzzy model is the right *lens* when the business question is
+about edges and hand-offs between zones, not just their interiors — which is
+exactly the shape of a last-mile delivery problem, where the busiest, most
+expensive minutes happen right at those boundaries.
+
 ## Technical decisions
 
 - **K-Means + elbow**: fast, interpretable baseline for zone partitioning
+- **Fuzzy C-Means (`--method fuzzy`)**: soft membership for boundary-ambiguity analysis — see above
 - **Greedy assigner**: nearest available courier; easy to explain, good for prototyping
 - **Synthetic data**: no proprietary warehouse dependencies; safe for public repos
 - **Haversine distances**: no OSM graph required; swappable later for road networks
@@ -135,6 +165,7 @@ src/teselado/
 - [ ] OSM / Overpass restaurant ingestion (`ingest/osm.py`)
 - [ ] Road-network distances with OSMnx
 - [ ] Silhouette / HDBSCAN for k selection
+- [ ] Fuzzy-aware courier assignment (route boundary orders to less-loaded zones)
 - [ ] MIP assigner with OR-Tools
 - [ ] Streamlit live dashboard
 
@@ -152,6 +183,8 @@ CI runs on Python 3.11 and 3.12 via GitHub Actions.
 
 MIT — see [LICENSE](LICENSE).
 
-## Authors
+## Authors & contributors
 
-Carlos Moreno Morera & Aarón González (original prototype, 2020).
+- **Aarón González** — original prototype (2020): fuzzy clustering, tessellation, simulation.
+- **Carlos Moreno Morera** — contributed the initial K-Means module extraction (`MyKMeans.py`, one commit, July 2020).
+- Refactored into an open-source portfolio pipeline (2026).

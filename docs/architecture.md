@@ -14,15 +14,17 @@ spanning data science, data engineering, and BI.
 ```mermaid
 flowchart LR
     A[data/sample Parquet] --> B[ingest/loaders]
-    B --> C[clustering/KMeans]
-    C --> D[clustering/selector]
-    D --> E[tessellation/zones]
-    E --> F[simulation/engine]
-    F --> G[viz/export]
-    G --> H[zones.geojson]
-    G --> I[report.json]
-    G --> J[map.html]
-    G --> K[dashboard.html]
+    B --> C{clustering/selector}
+    C --> C1[KMeans]
+    C --> C2[FuzzyCMeans]
+    C1 --> D[tessellation/zones]
+    C2 --> D
+    D --> E[simulation/engine]
+    E --> F[viz/export]
+    F --> G[zones.geojson]
+    F --> H[report.json]
+    F --> I[map.html]
+    F --> J[dashboard.html]
 ```
 
 ## Module responsibilities
@@ -32,7 +34,9 @@ flowchart LR
 | `ingest/synthetic.py` | Generate synthetic restaurants and orders with realistic timestamps |
 | `ingest/loaders.py` | Load and validate canonical Parquet datasets |
 | `clustering/kmeans.py` | Custom K-Means with configurable distance metric |
-| `clustering/selector.py` | Automatic k selection via elbow on WCSS |
+| `clustering/fuzzy_kmeans.py` | Fuzzy C-Means, same interface as `KMeans`, exposes soft membership |
+| `clustering/ambiguity.py` | Boundary-ambiguity metrics computed from fuzzy membership |
+| `clustering/selector.py` | Automatic k selection via elbow on WCSS (works with either backend) |
 | `tessellation/zones.py` | Grid sampling + convex hulls → zone polygons |
 | `simulation/agents.py` | Restaurant, courier, and order entities |
 | `simulation/assigner.py` | Greedy nearest-courier assignment |
@@ -44,14 +48,30 @@ flowchart LR
 
 ## Design decisions
 
-### K-Means + elbow selector
+### K-Means + elbow selector, with Fuzzy C-Means as a selectable backend
 
 K-Means is fast, interpretable, and sufficient to demonstrate zone partitioning.
 The elbow heuristic on within-cluster sum of squares provides an automatic
 starting point for k without adding scikit-learn as a hard dependency.
 
-Fuzzy C-Means remains available in `clustering/fuzzy.py` as an exploratory
-extension from the original 2020 prototype.
+Zone assignment is a genuinely fuzzy problem: an order placed two streets from
+a boundary doesn't stop belonging to its "true" zone at some crisp line — it
+has partial affinity to both. `clustering/fuzzy_kmeans.py` implements Fuzzy
+C-Means (`FuzzyCMeans`) behind the exact same `k` / `centroids_` / `fit` /
+`predict` contract as `KMeans`, so `--method fuzzy` is a drop-in swap anywhere
+in the pipeline (`select_k`, `tessellate`, the CLI). What hard clustering
+throws away, `FuzzyCMeans.membership()` keeps: a per-point degree of
+belonging to every zone. `clustering/ambiguity.py` turns that into a concrete
+KPI — `boundary_ambiguity` in `report.json` — reporting what share of orders
+sit close enough to a zone edge (small top-1/top-2 membership gap) that a
+hard-boundary decision is genuinely arbitrary. That number is directly
+actionable: it tells operations how much "edge policy" (e.g. always route
+ambiguous orders to the less-loaded zone) would actually affect, instead of
+guessing.
+
+The legacy exploratory helper from the original 2020 prototype
+(`clustering/fuzzy.py::Clustered`, sweeping fuzzy clustering across a range of
+k) is kept for backwards compatibility but is not part of the main pipeline.
 
 ### Euclidean geography
 
@@ -104,6 +124,8 @@ KPIs are aggregated per zone and globally:
 
 - `ingest/osm.py` — public POI ingestion via Overpass
 - `simulation/compare.py` — compare multiple k values
-- `clustering/fuzzy.py` — soft clustering experiments
+- `clustering/fuzzy_kmeans.py` — soft membership already exposed; a natural next step
+  is a "fuzzy boundary policy" in the simulator that routes ambiguous orders to
+  whichever adjacent zone has more courier capacity
 - Road-network distances via OSMnx
 - MIP assignment via OR-Tools
