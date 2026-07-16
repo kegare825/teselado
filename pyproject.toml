@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "teselado"
 version = "0.2.0"
 description = "Geospatial zone tessellation and last-mile delivery simulation"
-readme = "REFACTOR_PLAN.md"
+readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [

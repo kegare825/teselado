@@ -1,4 +1,4 @@
-.PHONY: install install-dev test lint clean run version
+.PHONY: install install-dev test lint clean run version generate sample info compare viz ci
 
 install:
 	python3 -m pip install -e .
@@ -12,8 +12,25 @@ test:
 lint:
 	python3 -m ruff check src/ tests/
 
+ci: lint test
+
+sample:
+	python3 -m teselado generate --city demo --restaurants 50 --orders 500 --seed 42 --output data/sample
+
+generate:
+	python3 -m teselado generate
+
+info:
+	python3 -m teselado info --data-dir data/sample
+
 run:
 	python3 -m teselado run
+
+compare:
+	python3 -m teselado compare
+
+viz:
+	python3 -m teselado viz
 
 version:
 	python3 -m teselado version

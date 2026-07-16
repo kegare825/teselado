@@ -10,7 +10,15 @@ class Settings(BaseSettings):
 
     data_dir: Path = Path("data/sample")
     output_dir: Path = Path("outputs")
+    city: str = "demo"
     k_min: int = 3
     k_max: int = 8
-    grid_step: float = 0.001
-    city: str = "demo"
+    k: int | None = None
+    grid_step: float | None = None
+    num_couriers: int = 5
+    avg_speed_kmh: float = 25.0
+    sla_minutes: float = 30.0
+    seed: int = 42
+    n_restaurants: int = 50
+    n_orders: int = 500
+    restaurant_handle_minutes: float = 5.0

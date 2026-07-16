@@ -1,0 +1,14 @@
+{
+  "city": "demo",
+  "label": "Demo City (Seville area, synthetic)",
+  "seed": 42,
+  "n_restaurants": 50,
+  "n_orders": 500,
+  "generated_at": "2026-07-14T14:03:42.654110+00:00",
+  "bbox": {
+    "lat_min": 37.35,
+    "lat_max": 37.42,
+    "lng_min": -6.05,
+    "lng_max": -5.95
+  }
+}

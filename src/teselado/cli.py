@@ -1,6 +1,14 @@
+from pathlib import Path
+
 import typer
 
 from teselado import __version__
+from teselado.config import Settings
+from teselado.ingest.loaders import dataset_summary
+from teselado.ingest.synthetic import list_cities, write_sample_dataset
+from teselado.pipeline import run_cluster_only, run_pipeline
+from teselado.simulation.compare import compare_from_settings, export_comparison
+from teselado.viz.render import export_visualizations_from_files
 
 app = typer.Typer(
     name="teselado",
@@ -16,7 +24,134 @@ def version() -> None:
 
 
 @app.command()
-def run() -> None:
-    """Run the full pipeline (implemented in Phase 2)."""
-    typer.echo("Pipeline not yet implemented. See REFACTOR_PLAN.md Phase 2.")
-    raise typer.Exit(code=1)
+def generate(
+    city: str = typer.Option("demo", help="City key for synthetic data."),
+    restaurants: int = typer.Option(50, help="Number of restaurants."),
+    orders: int = typer.Option(500, help="Number of orders."),
+    output: Path = typer.Option(Path("data/sample"), help="Output directory."),
+    seed: int = typer.Option(42, help="Random seed."),
+) -> None:
+    """Generate synthetic restaurant and order datasets."""
+    rest_path, orders_path, metadata_path = write_sample_dataset(
+        output,
+        city=city,
+        n_restaurants=restaurants,
+        n_orders=orders,
+        seed=seed,
+    )
+    typer.echo(f"Wrote {rest_path}")
+    typer.echo(f"Wrote {orders_path}")
+    typer.echo(f"Wrote {metadata_path}")
+
+
+@app.command("list-cities")
+def list_cities_cmd() -> None:
+    """List available synthetic cities and bounding boxes."""
+    for entry in list_cities():
+        typer.echo(
+            f"{entry['city']}: {entry['label']} "
+            f"[{entry['lat_min']}, {entry['lat_max']}] x "
+            f"[{entry['lng_min']}, {entry['lng_max']}]"
+        )
+
+
+@app.command()
+def info(
+    data_dir: Path = typer.Option(Path("data/sample"), help="Dataset directory."),
+) -> None:
+    """Show a summary of a dataset directory."""
+    summary = dataset_summary(data_dir)
+    typer.echo(f"City: {summary['city']}")
+    typer.echo(f"Restaurants: {summary['n_restaurants']}")
+    typer.echo(f"Orders: {summary['n_orders']}")
+    typer.echo(
+        f"Order timestamps: {summary['date_range']['min']} → {summary['date_range']['max']}"
+    )
+
+
+@app.command()
+def run(
+    city: str = typer.Option("demo", help="City label (used when generating missing data)."),
+    data_dir: Path = typer.Option(Path("data/sample"), help="Input data directory."),
+    output: Path = typer.Option(Path("outputs"), help="Output directory."),
+    k_min: int = typer.Option(3, help="Minimum k for auto selection."),
+    k_max: int = typer.Option(8, help="Maximum k for auto selection."),
+    grid_step: float | None = typer.Option(None, help="Tessellation grid step in degrees."),
+) -> None:
+    """Run the full pipeline: cluster → tessellate → simulate → export."""
+    if not (data_dir / "orders.parquet").exists():
+        typer.echo(f"No data in {data_dir}, generating synthetic sample...")
+        write_sample_dataset(data_dir, city=city)
+
+    cfg = Settings(
+        data_dir=data_dir,
+        output_dir=output,
+        city=city,
+        k_min=k_min,
+        k_max=k_max,
+        grid_step=grid_step,
+    )
+    result = run_pipeline(cfg)
+    typer.echo(f"Selected k={result.k}, zones={len(result.zones)}")
+    typer.echo(f"Wrote {result.output_dir / 'zones.geojson'}")
+    typer.echo(f"Wrote {result.output_dir / 'report.json'}")
+    typer.echo(f"Wrote {result.output_dir / 'map.html'}")
+    typer.echo(f"Wrote {result.output_dir / 'dashboard.html'}")
+    typer.echo(f"Avg delivery time: {result.metrics['avg_delivery_time_min']} min")
+    typer.echo(f"Orders/hour: {result.metrics.get('orders_per_hour', 0)}")
+    typer.echo(f"Courier utilisation: {result.metrics.get('courier_utilisation', 0)}")
+
+
+@app.command()
+def compare(
+    data_dir: Path = typer.Option(Path("data/sample"), help="Input data directory."),
+    output: Path = typer.Option(Path("outputs/comparison.json"), help="Output JSON path."),
+    k_values: str = typer.Option("3,5,8", help="Comma-separated k values to compare."),
+) -> None:
+    """Compare simulation KPIs across multiple zone counts."""
+    cfg = Settings(data_dir=data_dir)
+    values = [int(v.strip()) for v in k_values.split(",") if v.strip()]
+    comparisons = compare_from_settings(cfg, k_values=values)
+    export_comparison(comparisons, output)
+
+    for item in comparisons:
+        m = item.metrics
+        typer.echo(
+            f"k={item.k}: avg_delivery={m['avg_delivery_time_min']} min, "
+            f"sla={m['sla_hit_rate']}, orders/h={m['orders_per_hour']}, "
+            f"utilisation={m['courier_utilisation']}"
+        )
+    typer.echo(f"Wrote {output}")
+
+
+@app.command()
+def cluster(
+    input: Path = typer.Option(Path("data/sample"), "--input", help="Input data directory."),
+    k: int = typer.Option(5, help="Fixed number of clusters."),
+    output: Path = typer.Option(Path("outputs"), help="Output directory."),
+    grid_step: float | None = typer.Option(None, help="Tessellation grid step."),
+) -> None:
+    """Run clustering and tessellation with a fixed k."""
+    result = run_cluster_only(input, k=k, output_dir=output, grid_step=grid_step or 0.003)
+    typer.echo(f"k={result.k}, zones={len(result.zones)}")
+    typer.echo(f"Wrote {result.output_dir / 'zones.geojson'}")
+    typer.echo(f"Wrote {result.output_dir / 'map.html'}")
+    typer.echo(f"Wrote {result.output_dir / 'dashboard.html'}")
+
+
+@app.command()
+def viz(
+    input: Path = typer.Option(Path("outputs"), "--input", help="Output directory."),
+    data_dir: Path = typer.Option(Path("data/sample"), help="Source dataset directory."),
+    zones: Path | None = typer.Option(None, help="GeoJSON path override."),
+    report: Path | None = typer.Option(None, help="Report JSON path override."),
+) -> None:
+    """Build or refresh map.html and dashboard.html from pipeline outputs."""
+    paths = export_visualizations_from_files(
+        output_dir=input,
+        data_dir=data_dir,
+        zones_path=zones,
+        report_path=report,
+    )
+    typer.echo(f"Wrote {paths['map']}")
+    typer.echo(f"Wrote {paths['dashboard']}")

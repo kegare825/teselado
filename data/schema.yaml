@@ -1,0 +1,30 @@
+# Canonical dataset schema for teselado (no proprietary fields).
+
+restaurants:
+  columns:
+    restaurant_id: string
+    lat: float
+    lng: float
+    city: string
+
+orders:
+  columns:
+    order_id: string
+    restaurant_id: string
+    lat: float
+    lng: float
+    placed_at: datetime
+    city: string
+
+metadata:
+  fields:
+    city: string
+    seed: int
+    n_restaurants: int
+    n_orders: int
+    generated_at: datetime
+    bbox:
+      lat_min: float
+      lat_max: float
+      lng_min: float
+      lng_max: float
