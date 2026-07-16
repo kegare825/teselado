@@ -1,10 +1,15 @@
 # Plan de refactor — Teselado
 
-> **Objetivo:** convertir el prototipo de 2020 en un proyecto de portfolio público, ejecutable sin credenciales, sin referencias a Just Eat, y demostrable como caso de uso senior DS/DE/BI full stack.
+> **Estado (2026-07-16): completado.** El pipeline `ingest → cluster → tessellate → simulate → report`
+> es ejecutable con `make run`, incluye CI, tests, documentación de portfolio, demo en GitHub Pages,
+> comparación K-Means vs Fuzzy C-Means (haversine), ingest OSM, assigner MIP opcional y dashboard Streamlit.
+> Este documento se conserva como registro histórico del refactor.
 
-**Estado actual:** prototipo roto, sin README, con SQL interno de warehouse, librería `just-simulate` vendoreada, y `__pycache__` en git.
+> **Objetivo original:** convertir el prototipo de 2020 en un proyecto de portfolio público, ejecutable sin credenciales, sin referencias a Just Eat, y demostrable como caso de uso senior DS/DE/BI full stack.
 
-**Estado objetivo:** pipeline `ingest → cluster → tessellate → simulate → report` reproducible en 3 comandos.
+**Estado al inicio del refactor:** prototipo roto, sin README, con SQL interno de warehouse, librería `just-simulate` vendoreada, y `__pycache__` en git.
+
+**Estado objetivo:** pipeline `ingest → cluster → tessellate → simulate → report` reproducible en 3 comandos. ✅
 
 ---
 

@@ -73,13 +73,12 @@ The legacy exploratory helper from the original 2020 prototype
 (`clustering/fuzzy.py::Clustered`, sweeping fuzzy clustering across a range of
 k) is kept for backwards compatibility but is not part of the main pipeline.
 
-### Euclidean geography
+### Haversine distances (fixed for method comparison)
 
-Distances use haversine or planar approximations on lat/lng coordinates.
-This keeps the project self-contained and runnable without OSM graph downloads.
-
-A future iteration can swap the distance function for OSMnx road-network shortest
-paths without changing the simulation interface.
+All simulations — including `teselado compare-methods` — use haversine travel times.
+This is intentional: when comparing K-Means vs Fuzzy C-Means, only clustering and
+tessellation should change, not the distance model. Road-network distances (OSMnx) are
+a possible future extension but would apply equally to both methods.
 
 ### Greedy courier assignment
 

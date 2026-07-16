@@ -17,8 +17,11 @@ def compute_metrics(
 ) -> dict:
     """Compute portfolio KPIs from a simulation result."""
     completed = [o for o in result.orders if o.delivered_at is not None]
-    delivery_times = [delivery_time_minutes(o) for o in completed]
-    delivery_times = [t for t in delivery_times if t is not None]
+    delivery_times: list[float] = []
+    for order in completed:
+        dt = delivery_time_minutes(order)
+        if dt is not None:
+            delivery_times.append(dt)
 
     sla_hits = sum(1 for t in delivery_times if t <= sla_minutes)
     sim_hours = max(result.sim_duration_minutes / 60.0, 1e-9)

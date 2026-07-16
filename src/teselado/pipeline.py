@@ -4,11 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 from teselado.clustering.ambiguity import compute_ambiguity
-from teselado.clustering.fuzzy_kmeans import FuzzyCMeans
-from teselado.clustering.kmeans import KMeans
+from teselado.clustering.factory import build_model
 from teselado.clustering.selector import select_k
 from teselado.config import Settings
 from teselado.ingest.loaders import load_orders, load_orders_df, load_restaurants_df
@@ -16,14 +14,6 @@ from teselado.simulation.engine import SimulationParams, simulate
 from teselado.tessellation.zones import Zone, tessellate
 from teselado.viz.export import export_geojson, export_report
 from teselado.viz.render import export_visualizations
-
-#: Clustering backends selectable via `--method`. Both expose the same
-#: `k` / `centroids_` / `fit` / `predict` contract, so `tessellate()` and
-#: `select_k()` work unmodified with either one.
-CLUSTER_METHODS: dict[str, Callable[[int], object]] = {
-    "kmeans": lambda k: KMeans(k=k),
-    "fuzzy": lambda k: FuzzyCMeans(k=k),
-}
 
 
 @dataclass
@@ -35,16 +25,12 @@ class PipelineResult:
 
 
 def _build_model(method: str, k: int):
-    try:
-        factory = CLUSTER_METHODS[method]
-    except KeyError as exc:
-        raise ValueError(
-            f"Unknown clustering method '{method}'. Use one of {sorted(CLUSTER_METHODS)}."
-        ) from exc
-    return factory(k)
+    return build_model(method, k)
 
 
 def _fuzzy_ambiguity_metrics(model, points) -> dict | None:
+    from teselado.clustering.fuzzy_kmeans import FuzzyCMeans
+
     if not isinstance(model, FuzzyCMeans):
         return None
     return compute_ambiguity(model.membership(points))

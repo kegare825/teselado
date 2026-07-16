@@ -15,12 +15,23 @@ from teselado.simulation.metrics import compute_metrics
 from teselado.tessellation.zones import Zone
 
 
+def _build_assigner(name: str):
+    if name == "mip":
+        from teselado.simulation.mip_assigner import MipAssigner
+
+        return MipAssigner()
+    if name != "greedy":
+        raise ValueError(f"Unknown assigner '{name}'. Use 'greedy' or 'mip'.")
+    return GreedyAssigner()
+
+
 @dataclass
 class SimulationParams:
     num_couriers: int = 5
     avg_speed_kmh: float = 25.0
     sla_minutes: float = 30.0
     restaurant_handle_minutes: float = 5.0
+    assigner: str = "greedy"
 
 
 def _process_order(
@@ -80,7 +91,7 @@ def run_event_simulation(
     Events are processed in chronological order. If no courier is free at placement
     time, the order waits until the earliest courier becomes available.
     """
-    assigner = GreedyAssigner()
+    assigner = _build_assigner(params.assigner)
     event_queue: list[tuple[float, int, str, Order]] = []
     for seq, order in enumerate(sorted(orders, key=lambda o: o.placed_at)):
         heapq.heappush(event_queue, (order.placed_at, seq, "placed", order))

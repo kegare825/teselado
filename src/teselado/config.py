@@ -23,3 +23,4 @@ class Settings(BaseSettings):
     n_restaurants: int = 50
     n_orders: int = 500
     restaurant_handle_minutes: float = 5.0
+    assigner: str = "greedy"

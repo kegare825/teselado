@@ -2,23 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Callable, Protocol
+from typing import Any, Callable
 
 import numpy as np
 
 from teselado.clustering.kmeans import KMeans
 
 
-class _ClusterModel(Protocol):
-    k: int
-    centroids_: dict[int, np.ndarray]
-
-    def fit(self, data: np.ndarray) -> "_ClusterModel": ...
-
-    def predict(self, data: np.ndarray) -> np.ndarray: ...
-
-
-def _inertia(model: _ClusterModel, points: np.ndarray) -> float:
+def _inertia(model: Any, points: np.ndarray) -> float:
     total = 0.0
     labels = model.predict(points)
     for label in range(model.k):
@@ -34,7 +25,7 @@ def select_k(
     points: np.ndarray,
     k_min: int = 3,
     k_max: int = 8,
-    model_factory: Callable[[int], _ClusterModel] | None = None,
+    model_factory: Callable[[int], Any] | None = None,
 ) -> int:
     """
     Pick k using a simple elbow heuristic on within-cluster sum of squares.

@@ -13,7 +13,7 @@ import pandas as pd
 from teselado.ingest.schema import validate_orders, validate_restaurants
 
 # Real geographic bounding boxes with fully synthetic business data.
-CITY_BBOXES: dict[str, dict[str, float]] = {
+CITY_BBOXES: dict[str, dict[str, float | str]] = {
     "demo": {
         "lat_min": 37.35,
         "lat_max": 37.42,
@@ -45,11 +45,11 @@ class CityBBox:
             raise ValueError(f"Unknown city '{city}'. Available: {list(CITY_BBOXES)}")
         raw = CITY_BBOXES[city]
         return cls(
-            lat_min=raw["lat_min"],
-            lat_max=raw["lat_max"],
-            lng_min=raw["lng_min"],
-            lng_max=raw["lng_max"],
-            label=raw.get("label", city),
+            lat_min=float(raw["lat_min"]),
+            lat_max=float(raw["lat_max"]),
+            lng_min=float(raw["lng_min"]),
+            lng_max=float(raw["lng_max"]),
+            label=str(raw.get("label", city)),
         )
 
 
