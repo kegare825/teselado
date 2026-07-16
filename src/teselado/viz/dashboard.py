@@ -31,6 +31,17 @@ def build_dashboard_html(metrics: dict, map_filename: str = "map.html") -> str:
     zones_table = "\n".join(zone_rows) or "<tr><td colspan='6'>No zone data</td></tr>"
     metrics_json = html.escape(json.dumps(metrics, indent=2))
 
+    ambiguity = metrics.get("boundary_ambiguity")
+    ambiguity_card = ""
+    if ambiguity:
+        boundary_pct = round(ambiguity.get("boundary_point_ratio", 0) * 100, 1)
+        ambiguity_card = (
+            "<div class='card'>"
+            "<div class='label'>Boundary ambiguity (fuzzy)</div>"
+            f"<div class='value'>{_fmt(boundary_pct)}%</div>"
+            "</div>"
+        )
+
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -106,6 +117,7 @@ def build_dashboard_html(metrics: dict, map_filename: str = "map.html") -> str:
       <div class="card"><div class="label">SLA hit rate</div><div class="value">{_fmt(metrics.get('sla_hit_rate', 0))}</div></div>
       <div class="card"><div class="label">Orders / hour</div><div class="value">{_fmt(metrics.get('orders_per_hour', 0))}</div></div>
       <div class="card"><div class="label">Courier utilisation</div><div class="value">{_fmt(metrics.get('courier_utilisation', 0))}</div></div>
+      {ambiguity_card}
     </div>
 
     <h2>Zone KPIs</h2>

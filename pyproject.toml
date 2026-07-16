@@ -4,14 +4,28 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "teselado"
-version = "0.2.0"
+version = "0.3.0"
 description = "Geospatial zone tessellation and last-mile delivery simulation"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 authors = [
-    { name = "Carlos Moreno Morera" },
     { name = "Aarón González" },
+]
+keywords = [
+    "geospatial",
+    "clustering",
+    "last-mile",
+    "simulation",
+    "delivery-zones",
+    "fuzzy-c-means",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: GIS",
 ]
 dependencies = [
     "numpy>=1.26",
@@ -23,13 +37,39 @@ dependencies = [
     "typer>=0.9",
     "pydantic-settings>=2.0",
     "pyarrow>=14.0",
+    "matplotlib>=3.8",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4",
+    "pytest-cov>=4.1",
     "ruff>=0.1",
+    "mypy>=1.8",
+    "types-requests>=2.31",
 ]
+portfolio = [
+    "streamlit>=1.32",
+]
+mip = [
+    "ortools>=9.9",
+]
+all = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "ruff>=0.1",
+    "mypy>=1.8",
+    "types-requests>=2.31",
+    "streamlit>=1.32",
+    "ortools>=9.9",
+]
+
+[project.urls]
+Homepage = "https://github.com/kegare825/teselado"
+Repository = "https://github.com/kegare825/teselado"
+Documentation = "https://github.com/kegare825/teselado/blob/master/docs/architecture.md"
+Issues = "https://github.com/kegare825/teselado/issues"
+Demo = "https://kegare825.github.io/teselado/map.html"
 
 [project.scripts]
 teselado = "teselado.cli:app"
@@ -43,3 +83,29 @@ testpaths = ["tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src/teselado"]
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_unreachable = true
+strict_optional = true
+
+[[tool.mypy.overrides]]
+module = [
+    "pyclustering.*",
+    "folium.*",
+    "streamlit.*",
+    "ortools.*",
+]
+ignore_missing_imports = true
+
+[tool.coverage.run]
+source = ["teselado"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false

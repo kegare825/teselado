@@ -27,5 +27,8 @@ jobs:
       - name: Lint
         run: ruff check src/ tests/
 
-      - name: Test
-        run: pytest tests/ -v
+      - name: Type check
+        run: mypy src/teselado
+
+      - name: Test with coverage
+        run: pytest tests/ -v --cov=teselado --cov-report=term-missing

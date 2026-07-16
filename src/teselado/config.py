@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data/sample")
     output_dir: Path = Path("outputs")
     city: str = "demo"
+    method: str = "kmeans"  # "kmeans" or "fuzzy"
     k_min: int = 3
     k_max: int = 8
     k: int | None = None
@@ -22,3 +23,4 @@ class Settings(BaseSettings):
     n_restaurants: int = 50
     n_orders: int = 500
     restaurant_handle_minutes: float = 5.0
+    assigner: str = "greedy"

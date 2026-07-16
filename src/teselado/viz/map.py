@@ -124,7 +124,7 @@ def build_map(
         + "<br>".join(legend_rows)
         + "</div>"
     )
-    fmap.get_root().html.add_child(folium.Element(legend_html))
+    fmap.get_root().html.add_child(folium.Element(legend_html))  # type: ignore[attr-defined]
     return fmap
 
 
