@@ -23,6 +23,97 @@ class ZoneComparison:
     method: str = "kmeans"
 
 
+@dataclass
+class DistanceComparison:
+    distance_mode: str
+    metrics: dict
+    k: int
+
+
+def compare_distance_models(
+    zones: list,
+    orders_df: pd.DataFrame,
+    restaurants_df: pd.DataFrame,
+    params: SimulationParams,
+    modes: list[str] | None = None,
+) -> list[DistanceComparison]:
+    """
+    Compare haversine vs OSMnx road-network travel times on the *same* zones.
+
+    Clustering/tessellation is held fixed; only the distance model changes.
+    """
+    modes = modes or ["haversine", "osmnx"]
+    k = len(zones)
+    comparisons: list[DistanceComparison] = []
+
+    for mode in modes:
+        run_params = SimulationParams(
+            num_couriers=params.num_couriers,
+            avg_speed_kmh=params.avg_speed_kmh,
+            sla_minutes=params.sla_minutes,
+            restaurant_handle_minutes=params.restaurant_handle_minutes,
+            assigner=params.assigner,
+            distance_mode=mode,
+            city=params.city,
+            graph_cache_dir=params.graph_cache_dir,
+        )
+        metrics = simulate(zones, orders_df, restaurants_df, run_params)
+        metrics["distance_mode"] = mode
+        comparisons.append(DistanceComparison(distance_mode=mode, metrics=metrics, k=k))
+
+    return comparisons
+
+
+def compare_distances_from_settings(
+    cfg: Settings,
+    k: int | None = None,
+    modes: list[str] | None = None,
+) -> list[DistanceComparison]:
+    """Build zones once, then compare distance models."""
+    from teselado.ingest.loaders import load_orders
+
+    orders_df = load_orders_df(cfg.data_dir)
+    restaurants_df = load_restaurants_df(cfg.data_dir)
+    points = load_orders(cfg.data_dir)
+
+    selected_k = k or cfg.k or 5
+    model = build_model(cfg.method, selected_k).fit(points)
+    zones = tessellate(model, points, grid_step=cfg.grid_step)
+
+    params = SimulationParams(
+        num_couriers=cfg.num_couriers,
+        avg_speed_kmh=cfg.avg_speed_kmh,
+        sla_minutes=cfg.sla_minutes,
+        restaurant_handle_minutes=cfg.restaurant_handle_minutes,
+        city=cfg.city,
+        graph_cache_dir=cfg.graph_cache_dir,
+    )
+    return compare_distance_models(
+        zones, orders_df, restaurants_df, params, modes=modes
+    )
+
+
+def export_distance_comparison(
+    comparisons: list[DistanceComparison], path: Path
+) -> Path:
+    import json
+
+    payload = {
+        "comparisons": [
+            {
+                "distance_mode": item.distance_mode,
+                "k": item.k,
+                "metrics": item.metrics,
+            }
+            for item in comparisons
+        ]
+    }
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    return path
+
+
 def _run_scenario(
     orders_df: pd.DataFrame,
     restaurants_df: pd.DataFrame,
@@ -38,6 +129,7 @@ def _run_scenario(
     metrics = simulate(zones, orders_df, restaurants_df, params)
     metrics["selected_k"] = k
     metrics["clustering_method"] = method
+    metrics.setdefault("distance_mode", params.distance_mode)
 
     if isinstance(model, FuzzyCMeans):
         metrics["boundary_ambiguity"] = compute_ambiguity(model.membership(points))

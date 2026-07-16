@@ -60,6 +60,8 @@ def run_pipeline(cfg: Settings) -> PipelineResult:
             avg_speed_kmh=cfg.avg_speed_kmh,
             sla_minutes=cfg.sla_minutes,
             restaurant_handle_minutes=cfg.restaurant_handle_minutes,
+            city=cfg.city,
+            graph_cache_dir=cfg.graph_cache_dir,
         ),
     )
     metrics["selected_k"] = k

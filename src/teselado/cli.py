@@ -9,9 +9,11 @@ from teselado.ingest.loaders import dataset_summary
 from teselado.ingest.synthetic import list_cities, write_sample_dataset
 from teselado.pipeline import run_cluster_only, run_pipeline
 from teselado.simulation.compare import (
+    compare_distances_from_settings,
     compare_from_settings,
     compare_methods_from_settings,
     export_comparison,
+    export_distance_comparison,
 )
 from teselado.viz.render import export_visualizations_from_files
 
@@ -124,6 +126,36 @@ def run(
         )
 
 
+@app.command("compare-distances")
+def compare_distances(
+    data_dir: Path = typer.Option(Path("data/sample"), help="Input data directory."),
+    output: Path = typer.Option(
+        Path("outputs/distance_comparison.json"), help="Output JSON path."
+    ),
+    k: int = typer.Option(5, help="Fixed k for zone tessellation."),
+    modes: str = typer.Option(
+        "haversine,osmnx",
+        help="Comma-separated distance models on the same zones.",
+    ),
+    city: str = typer.Option("demo", help="City key for OSMnx graph bbox/cache."),
+) -> None:
+    """Compare haversine vs OSMnx road distances on the same zone tessellation."""
+    cfg = Settings(data_dir=data_dir, city=city, k=k, method="fuzzy")
+    mode_list = [value.strip() for value in modes.split(",") if value.strip()]
+    comparisons = compare_distances_from_settings(cfg, k=k, modes=mode_list)
+    export_distance_comparison(comparisons, output)
+
+    for item in comparisons:
+        m = item.metrics
+        typer.echo(
+            f"distance={item.distance_mode}, k={item.k}: "
+            f"avg_delivery={m['avg_delivery_time_min']} min, "
+            f"sla={m['sla_hit_rate']}, orders/h={m['orders_per_hour']}, "
+            f"utilisation={m['courier_utilisation']}"
+        )
+    typer.echo(f"Wrote {output}")
+
+
 @app.command("compare-methods")
 def compare_methods(
     data_dir: Path = typer.Option(Path("data/sample"), help="Input data directory."),
@@ -136,7 +168,7 @@ def compare_methods(
         help="Comma-separated clustering methods (same haversine simulation).",
     ),
 ) -> None:
-    """Compare K-Means vs Fuzzy C-Means at the same k with haversine travel times."""
+    """Compare K-Means vs Fuzzy C-Means at the same k (clustering-only comparison)."""
     cfg = Settings(data_dir=data_dir, k=k)
     method_list = [value.strip() for value in methods.split(",") if value.strip()]
     comparisons = compare_methods_from_settings(cfg, k=k, methods=method_list)

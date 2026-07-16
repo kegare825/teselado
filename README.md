@@ -3,7 +3,7 @@
 [![CI](https://github.com/kegare825/teselado/actions/workflows/ci.yml/badge.svg)](https://github.com/kegare825/teselado/actions/workflows/ci.yml)
 [![Pages](https://github.com/kegare825/teselado/actions/workflows/pages.yml/badge.svg)](https://github.com/kegare825/teselado/actions/workflows/pages.yml)
 ![Python](https://img.shields.io/badge/python-3.11%20|%203.12-blue)
-![Tests](https://img.shields.io/badge/tests-38%20passed-brightgreen)
+![Tests](https://img.shields.io/badge/tests-42%20passed-brightgreen)
 
 **Geospatial zone tessellation and last-mile delivery simulation.**
 
@@ -16,26 +16,38 @@ evaluates tessellations, and simulates courier assignment with business KPIs.
 > *Framework de optimización territorial para operaciones de last-mile delivery:
 > clustering espacial → teselado operativo → simulación discreta → KPIs de negocio.*
 
-![Zone map](docs/images/map.png)
+![Delivery zones](docs/images/map.png)
+*Coloured polygons = operational zones. Squares = restaurants, grey dots = orders.*
 
-![KPI dashboard snapshot](docs/images/dashboard.png)
+![Haversine vs OSMnx](docs/images/distance_comparison.png)
+*Same zone tessellation (Fuzzy C-Means); only the travel-time model changes.*
 
 ## Problem
 
-Last-mile delivery operators need to decide how many zones to run and how to staff them.
-Too few zones create long routes and SLA breaches; too many zones increase idle couriers
-and management overhead.
+Last-mile delivery operators need to decide how to partition a city into zones and
+how to estimate travel times for staffing and SLA planning. A straight-line
+(haversine) model is fast but ignores roads; a road-network model (OSMnx) is
+slower but closer to reality.
 
-This project answers: **given order and restaurant locations, how do zone counts and
-clustering methods affect delivery time, SLA compliance, and courier utilisation?**
+This project answers: **given the same zone tessellation, how do haversine and
+OSM road-network distances change simulated delivery KPIs?**
 
 ## Key takeaway
 
-On the bundled synthetic dataset, **k dominates the KPI outcome**: moving from k=5 to k=8
-cuts average delivery time from ~146 min to ~38 min and raises SLA hit rate from ~21% to
-~55%. The value of the project is **scenario comparison under the same haversine model**,
-not tuning a single run. Use `teselado compare` for zone counts and
-`teselado compare-methods` for K-Means vs Fuzzy C-Means at the same k.
+The core comparison is **`teselado compare-distances`**: build zones once with
+Fuzzy C-Means, then simulate the *same* tessellation with:
+
+- **Haversine** — great-circle distance × average speed (baseline, fast)
+- **OSMnx** — shortest path on OpenStreetMap drive network (real roads)
+
+If the two models diverge materially on avg delivery time or SLA hit rate, your
+operational plan is sensitive to how distances are modelled — exactly the kind
+of insight a DS/DE portfolio piece should surface.
+
+```bash
+pip install -e ".[roads]"
+teselado compare-distances --k 5 --methods haversine,osmnx
+```
 
 ## Solution
 
@@ -51,7 +63,7 @@ flowchart LR
 1. **Ingest** synthetic or OSM restaurant data (Parquet, seed=42)
 2. **Cluster** with K-Means or Fuzzy C-Means and automatic k selection
 3. **Tessellate** the city into zone polygons via grid sampling
-4. **Simulate** discrete-event delivery with greedy or MIP assigner (**haversine** travel times)
+4. **Simulate** discrete-event delivery with configurable distance model (haversine or OSMnx)
 5. **Export** GeoJSON, JSON metrics, Folium map, HTML dashboard, and static PNGs
 
 See [docs/architecture.md](docs/architecture.md) and [CHANGELOG.md](CHANGELOG.md).
@@ -60,7 +72,7 @@ See [docs/architecture.md](docs/architecture.md) and [CHANGELOG.md](CHANGELOG.md
 
 | Layer | Tools |
 |-------|-------|
-| DS | K-Means, Fuzzy C-Means, elbow k-selection, haversine distances |
+| DS | Fuzzy C-Means tessellation, haversine vs OSMnx comparison |
 | DE | Typer CLI, Parquet, pydantic-settings, reproducible pipeline |
 | BI | `report.json`, `dashboard.html`, Streamlit, GitHub Pages demo |
 | Viz | Folium, Matplotlib, Shapely, GeoJSON |
@@ -71,11 +83,11 @@ See [docs/architecture.md](docs/architecture.md) and [CHANGELOG.md](CHANGELOG.md
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[dev,roads]"
 
 make sample    # generate data/sample (seed=42)
 make run       # full pipeline → outputs/
-make test      # 38 tests
+make test      # 42 tests
 make assets    # regenerate docs/images + docs/demo
 ```
 
@@ -93,8 +105,8 @@ streamlit run streamlit_app.py   # optional live dashboard
 teselado generate --city demo --restaurants 50 --orders 500
 teselado run --k-min 3 --k-max 8
 teselado run --method fuzzy
+teselado compare-distances --k 5 --methods haversine,osmnx
 teselado compare --k-values 3,5,8
-teselado compare-methods --k 5 --methods kmeans,fuzzy
 teselado fetch-osm --city demo --output data/osm
 teselado cluster --k 5 --method fuzzy
 teselado viz
@@ -120,15 +132,16 @@ teselado info
 | 5 | 145.5 min | 21.4% | 16.5 |
 | 8 | **38.1 min** | **55.2%** | **19.9** |
 
-### Method comparison at k=5 (`teselado compare-methods`)
+### Distance model comparison (`teselado compare-distances`)
 
-Both methods share the **same haversine simulation** so differences come from
-clustering/tessellation only:
+Same zones (k=5, Fuzzy C-Means), different travel-time models:
 
-| Method | Avg delivery | SLA hit | Boundary ambiguity |
-|--------|-------------|---------|-------------------|
-| kmeans | ~145 min | ~21% | — |
-| fuzzy | ~similar | ~similar | ~15% orders near zone edge |
+| Distance model | What it measures |
+|----------------|------------------|
+| **haversine** | Straight-line km × avg speed — fast baseline |
+| **osmnx** | Shortest drive path on OSM graph — real roads |
+
+Run locally to populate KPI bars in `docs/images/distance_comparison.png`.
 
 ## Why Fuzzy C-Means for zone boundaries?
 
@@ -137,14 +150,12 @@ instead of hard 0/1 labels, exposing `boundary_ambiguity` in `report.json` — t
 share of orders whose top-1 vs top-2 zone affinity is too close to call. That is
 actionable for ops (e.g. route ambiguous orders to the less-loaded neighbouring zone).
 
-Run `teselado run --method fuzzy` or `teselado compare-methods` to see it end to end.
+Run `teselado run --method fuzzy` to see it end to end.
 
 ## Technical decisions
 
-- **Haversine distances (fixed)**: kept for all simulations so K-Means vs Fuzzy
-  comparisons are apples-to-apples. Road-network distances are intentionally not mixed in.
-- **K-Means + elbow**: fast, interpretable baseline
-- **Fuzzy C-Means (`--method fuzzy`)**: boundary-ambiguity analysis
+- **Haversine vs OSMnx**: core portfolio comparison — same zones, different distance model
+- **Fuzzy C-Means (`--method fuzzy`)**: default tessellation + boundary-ambiguity KPI
 - **Greedy / MIP assigner**: greedy default; optional OR-Tools MIP (`assigner="mip"`)
 - **Synthetic + OSM ingest**: no proprietary warehouse dependencies
 
@@ -168,7 +179,7 @@ docs/demo/         # GitHub Pages assets
 make lint
 make typecheck
 make test
-make compare-methods
+make compare-distances
 make assets
 ```
 
