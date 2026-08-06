@@ -3,26 +3,27 @@
 from __future__ import annotations
 
 import heapq
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from pathlib import Path
 
 import pandas as pd
 
 from teselado.simulation.agents import Courier, Order, SimulationResult
 from teselado.simulation.assigner import GreedyAssigner
-from teselado.simulation.geo import travel_minutes
+from teselado.simulation.distance import DistanceCalculator, build_distance_calculator
 from teselado.simulation.inputs import build_couriers, build_orders, build_restaurants
 from teselado.simulation.metrics import compute_metrics
 from teselado.tessellation.zones import Zone
 
 
-def _build_assigner(name: str):
+def _build_assigner(name: str, calculator: DistanceCalculator) -> GreedyAssigner:
     if name == "mip":
         from teselado.simulation.mip_assigner import MipAssigner
 
-        return MipAssigner()
+        return MipAssigner(calculator=calculator)
     if name != "greedy":
         raise ValueError(f"Unknown assigner '{name}'. Use 'greedy' or 'mip'.")
-    return GreedyAssigner()
+    return GreedyAssigner(calculator=calculator)
 
 
 @dataclass
@@ -32,6 +33,20 @@ class SimulationParams:
     sla_minutes: float = 30.0
     restaurant_handle_minutes: float = 5.0
     assigner: str = "greedy"
+    distance_mode: str = "haversine"
+    city: str = "demo"
+    graph_cache_dir: Path | None = None
+    _calculator: DistanceCalculator | None = field(default=None, repr=False)
+
+    def get_calculator(self, points=None) -> DistanceCalculator:
+        if self._calculator is None:
+            self._calculator = build_distance_calculator(
+                self.distance_mode,
+                city=self.city,
+                cache_dir=self.graph_cache_dir,
+                points=points,
+            )
+        return self._calculator
 
 
 def _process_order(
@@ -39,6 +54,7 @@ def _process_order(
     couriers: list[Courier],
     assigner: GreedyAssigner,
     params: SimulationParams,
+    calculator: DistanceCalculator,
     current_time: float,
 ) -> float:
     """Assign and complete one order; returns delivered_at timestamp."""
@@ -48,7 +64,7 @@ def _process_order(
     else:
         start_time = max(current_time, courier.available_at)
 
-    to_restaurant = travel_minutes(
+    to_restaurant = calculator.travel_minutes(
         courier.lat,
         courier.lng,
         order.restaurant_lat,
@@ -56,7 +72,7 @@ def _process_order(
         params.avg_speed_kmh,
     )
     pickup_complete = start_time + to_restaurant + params.restaurant_handle_minutes
-    to_customer = travel_minutes(
+    to_customer = calculator.travel_minutes(
         order.restaurant_lat,
         order.restaurant_lng,
         order.customer_lat,
@@ -84,6 +100,7 @@ def run_event_simulation(
     orders: list[Order],
     couriers: list[Courier],
     params: SimulationParams,
+    calculator: DistanceCalculator | None = None,
 ) -> SimulationResult:
     """
     Process orders through a discrete-event queue: placed → assigned → delivered.
@@ -91,7 +108,8 @@ def run_event_simulation(
     Events are processed in chronological order. If no courier is free at placement
     time, the order waits until the earliest courier becomes available.
     """
-    assigner = _build_assigner(params.assigner)
+    calculator = calculator or params.get_calculator()
+    assigner = _build_assigner(params.assigner, calculator)
     event_queue: list[tuple[float, int, str, Order]] = []
     for seq, order in enumerate(sorted(orders, key=lambda o: o.placed_at)):
         heapq.heappush(event_queue, (order.placed_at, seq, "placed", order))
@@ -107,6 +125,7 @@ def run_event_simulation(
                 couriers,
                 assigner,
                 params,
+                calculator,
                 current_time,
             )
             completed.append(order)
@@ -131,8 +150,12 @@ def simulate(
 ) -> dict:
     """Run the full simulation pipeline and return KPI metrics."""
     params = params or SimulationParams()
+    points = orders_df[["lat", "lng"]].to_numpy(dtype=float)
+    calculator = params.get_calculator(points=points)
     restaurants = build_restaurants(restaurants_df)
     orders = build_orders(orders_df, restaurants, zones)
     couriers = build_couriers(zones, params.num_couriers)
-    result = run_event_simulation(orders, couriers, params)
-    return compute_metrics(result, sla_minutes=params.sla_minutes)
+    result = run_event_simulation(orders, couriers, params, calculator)
+    metrics = compute_metrics(result, sla_minutes=params.sla_minutes)
+    metrics["distance_mode"] = params.distance_mode
+    return metrics

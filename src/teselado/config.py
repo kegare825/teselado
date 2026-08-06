@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     data_dir: Path = Path("data/sample")
     output_dir: Path = Path("outputs")
     city: str = "demo"
+    graph_cache_dir: Path | None = Path("data/cache/graphs")
     method: str = "kmeans"  # "kmeans" or "fuzzy"
     k_min: int = 3
     k_max: int = 8

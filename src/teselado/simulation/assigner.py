@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 from teselado.simulation.agents import Courier, Order
-from teselado.simulation.geo import haversine_km
+from teselado.simulation.distance import DistanceCalculator, HaversineCalculator
 
 
 class GreedyAssigner:
     """Assign each order to the nearest available courier, preferring the order zone."""
+
+    def __init__(self, calculator: DistanceCalculator | None = None) -> None:
+        self.calculator = calculator or HaversineCalculator()
 
     def select(
         self,
@@ -24,7 +27,7 @@ class GreedyAssigner:
 
         return min(
             pool,
-            key=lambda c: haversine_km(
+            key=lambda c: self.calculator.distance_km(
                 c.lat, c.lng, order.restaurant_lat, order.restaurant_lng
             ),
         )

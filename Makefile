@@ -35,6 +35,9 @@ run:
 compare:
 	python3 -m teselado compare
 
+compare-distances:
+	python3 -m teselado compare-distances --k 5
+
 compare-methods:
 	python3 -m teselado compare-methods --k 5
 

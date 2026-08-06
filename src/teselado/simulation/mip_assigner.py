@@ -6,7 +6,7 @@ from typing import Any
 
 from teselado.simulation.agents import Courier, Order
 from teselado.simulation.assigner import GreedyAssigner
-from teselado.simulation.geo import haversine_km
+from teselado.simulation.distance import DistanceCalculator
 
 
 class MipAssigner(GreedyAssigner):
@@ -14,10 +14,11 @@ class MipAssigner(GreedyAssigner):
     Min-cost bipartite matching for orders that become available at the same time.
 
     Falls back to the greedy strategy when OR-Tools is unavailable or only one
-    order is pending. Travel costs use the same haversine metric as GreedyAssigner.
+    order is pending. Travel costs use the configured distance calculator.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, calculator: DistanceCalculator | None = None) -> None:
+        super().__init__(calculator=calculator)
         self._pending: list[tuple[Order, float]] = []
         self._last_time: float | None = None
 
@@ -52,7 +53,7 @@ class MipAssigner(GreedyAssigner):
         assign: dict[tuple[int, int], Any] = {}
         for i, pending_order in enumerate(pending_orders):
             for j, courier in enumerate(available):
-                cost = haversine_km(
+                cost = self.calculator.distance_km(
                     courier.lat,
                     courier.lng,
                     pending_order.restaurant_lat,
@@ -72,7 +73,7 @@ class MipAssigner(GreedyAssigner):
         for (i, j), var in assign.items():
             pending_order = pending_orders[i]
             courier = available[j]
-            cost = haversine_km(
+            cost = self.calculator.distance_km(
                 courier.lat,
                 courier.lng,
                 pending_order.restaurant_lat,
