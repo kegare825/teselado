@@ -1,5 +1,9 @@
 # Bytecode
 __pycache__/
+
+# OSMnx / Overpass API response cache and cached graph objects (regenerable)
+/cache/
+data/cache/
 *.py[cod]
 *$py.class
 *.so
