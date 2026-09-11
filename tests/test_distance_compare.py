@@ -63,7 +63,8 @@ def test_compare_distance_models_runs_both_modes(mock_simulate, sample_data: Pat
 
 
 def test_osmnx_calculator_uses_graph_shortest_path():
-    import networkx as nx
+    pytest.importorskip("osmnx")
+    nx = pytest.importorskip("networkx")
 
     graph = nx.Graph()
     graph.add_node(1, x=-6.0, y=37.38)
