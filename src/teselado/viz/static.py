@@ -14,7 +14,8 @@ from teselado.viz.map import ZONE_COLORS
 
 
 def _ratio_as_percent(value: float) -> float:
-    return value * 100.0 if value <= 1.0 else value
+    """Convert a 0-1 ratio (SLA hit rate, utilisation) to a percentage."""
+    return value * 100.0
 
 
 def export_zone_map_png(

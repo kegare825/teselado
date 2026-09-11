@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from teselado.simulation.agents import Courier, Order
 from teselado.simulation.assigner import GreedyAssigner
@@ -125,3 +126,32 @@ def test_simulate_with_dataframes():
     )
     assert metrics["completed_orders"] == 1
     assert metrics["avg_delivery_time_min"] > 0
+
+
+def test_courier_busy_time_excludes_queue_wait():
+    """Utilisation must be a 0-1 ratio: queue wait belongs to the order, not the courier."""
+    orders = [
+        Order(
+            id=f"o{i}",
+            restaurant_id="r1",
+            restaurant_lat=0.0,
+            restaurant_lng=0.0,
+            customer_lat=0.05,
+            customer_lng=0.05,
+            zone_id=0,
+            placed_at=0.0,
+        )
+        for i in range(5)
+    ]
+    couriers = [Courier(id="c0", lat=0.0, lng=0.0, zone_id=0)]
+    result = run_event_simulation(orders, couriers, SimulationParams(num_couriers=1))
+
+    courier = result.couriers[0]
+    service_minutes = sum(o.delivered_at - o.assigned_at for o in result.orders)
+    assert courier.busy_minutes == pytest.approx(service_minutes)
+    assert courier.busy_minutes <= result.sim_duration_minutes + 1e-9
+
+    metrics = compute_metrics(result, sla_minutes=30.0)
+    assert 0.0 < metrics["courier_utilisation"] <= 1.0
+    # Every order waited on the single courier, so cycle time exceeds service time.
+    assert metrics["avg_delivery_time_min"] > service_minutes / len(orders)

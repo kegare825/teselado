@@ -86,7 +86,9 @@ def _process_order(
     order.picked_up_at = pickup_complete
     order.delivered_at = delivered_at
 
-    busy = delivered_at - min(start_time, order.placed_at)
+    # Courier busy time starts when the courier actually begins the order, not when
+    # the order was placed: queue wait belongs to the order, not to the courier.
+    busy = delivered_at - start_time
     courier.available_at = delivered_at
     courier.lat = order.customer_lat
     courier.lng = order.customer_lng
