@@ -8,7 +8,8 @@ make assets
 
 Files:
 
-- `map.png` — static zone map for README/CV
-- `dashboard.png` — KPI bar chart snapshot
+- `map.png` — static zone map (Fuzzy C-Means tessellation on `data/sample`)
+- `distance_comparison.png` — KPI bars, haversine vs OSMnx on the same zones
 
-Interactive demo lives in `docs/demo/` and is published via GitHub Pages.
+Interactive demo assets live in `docs/demo/` and are published via GitHub Pages
+(`.github/workflows/pages.yml`).

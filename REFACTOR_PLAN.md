@@ -1,9 +1,11 @@
 # Plan de refactor — Teselado
 
-> **Estado (2026-07-16): completado.** El pipeline `ingest → cluster → tessellate → simulate → report`
-> es ejecutable con `make run`, incluye CI, tests, documentación de portfolio, demo en GitHub Pages,
-> comparación K-Means vs Fuzzy C-Means (haversine), ingest OSM, assigner MIP opcional y dashboard Streamlit.
-> Este documento se conserva como registro histórico del refactor.
+> **Estado: ejecutado en v0.2.0–v0.3.0 (ver [CHANGELOG.md](CHANGELOG.md)).** El pipeline
+> `ingest → cluster → tessellate → simulate → report` es ejecutable con `make run` e incluye CI,
+> tests, documentación, workflow de GitHub Pages, comparación K-Means vs Fuzzy C-Means,
+> comparación haversine vs OSMnx, ingest OSM, assigner MIP opcional y dashboard Streamlit.
+> Este documento se conserva como registro histórico del plan original; las tablas "Hoy/Objetivo"
+> describen el estado del prototipo de 2020 en el momento de redactarlo.
 
 > **Objetivo original:** convertir el prototipo de 2020 en un proyecto de portfolio público, ejecutable sin credenciales, sin referencias a Just Eat, y demostrable como caso de uso senior DS/DE/BI full stack.
 
@@ -311,7 +313,7 @@ jobs:
 
 ## Checklist de limpieza Just Eat
 
-Ejecutar antes de hacer el repo público:
+Ejecutado antes de hacer el repo público (Fase 0):
 
 - [ ] `grep -ri "just-eat" .` → 0 resultados
 - [ ] `grep -ri "just-data" .` → 0 resultados
@@ -375,8 +377,8 @@ El proyecto está listo para portfolio cuando:
 
 ---
 
-## Próximo paso inmediato
+## Punto de partida
 
-Empezar por **Fase 0**: crear `.gitignore`, eliminar `just-simulate-master/` y archivos con SQL JE, y sacar `__pycache__` del tracking.
-
-¿Quieres que ejecute la Fase 0 ahora?
+La ejecución comenzó por la **Fase 0**: creación de `.gitignore`, eliminación de
+`just-simulate-master/` y de los archivos con SQL interno, y retirada de `__pycache__` del tracking
+(commit "Phase 0: remove proprietary dependencies and sanitize workspace").
