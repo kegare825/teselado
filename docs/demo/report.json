@@ -7,28 +7,28 @@
   "avg_delivery_time_min": 138.83,
   "sla_hit_rate": 0.242,
   "orders_per_hour": 16.69,
-  "courier_utilisation": 7.723,
+  "courier_utilisation": 0.963,
   "zones": {
     "1": {
       "order_count": 193,
       "avg_delivery_time_min": 130.37,
       "sla_hit_rate": 0.233,
       "orders_per_hour": 6.44,
-      "courier_utilisation": 7.723
+      "courier_utilisation": 0.963
     },
     "2": {
       "order_count": 123,
       "avg_delivery_time_min": 146.66,
       "sla_hit_rate": 0.276,
       "orders_per_hour": 4.11,
-      "courier_utilisation": 7.723
+      "courier_utilisation": 0.963
     },
     "0": {
       "order_count": 184,
       "avg_delivery_time_min": 142.46,
       "sla_hit_rate": 0.228,
       "orders_per_hour": 6.14,
-      "courier_utilisation": 7.723
+      "courier_utilisation": 0.963
     }
   },
   "distance_mode": "haversine",

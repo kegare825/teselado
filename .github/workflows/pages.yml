@@ -1,5 +1,10 @@
 name: Pages
 
+# Builds docs/demo (map, dashboard, report, GeoJSON) and publishes it to GitHub Pages.
+# Requires Pages to be enabled once in the repository settings:
+#   Settings -> Pages -> Build and deployment -> Source: "GitHub Actions".
+# Until that is done the deploy step fails with "Get Pages site failed".
+
 on:
   push:
     branches: [master, main]
@@ -29,8 +34,17 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install package
-        run: pip install -e ".[dev,portfolio]"
+      # The asset script runs the haversine vs OSMnx comparison, which needs the
+      # [roads] extra (osmnx + networkx). If Overpass is unreachable the script
+      # falls back to a haversine-only chart instead of failing the deploy.
+      - name: Install package with road-network extras
+        run: pip install -e ".[roads]"
+
+      - name: Cache OSM drive graph
+        uses: actions/cache@v4
+        with:
+          path: data/cache
+          key: osm-graph-${{ hashFiles('src/teselado/ingest/synthetic.py', 'src/teselado/simulation/distance.py') }}
 
       - name: Build demo assets
         run: python scripts/generate_portfolio_assets.py
