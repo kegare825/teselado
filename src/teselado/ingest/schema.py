@@ -39,7 +39,9 @@ def validate_orders(df: pd.DataFrame, restaurants: pd.DataFrame | None = None) -
         valid_ids = set(restaurants["restaurant_id"])
         unknown = set(df["restaurant_id"]) - valid_ids
         if unknown:
-            raise ValueError(f"Orders reference unknown restaurant_id values: {sorted(unknown)[:5]}")
+            raise ValueError(
+                f"Orders reference unknown restaurant_id values: {sorted(unknown)[:5]}"
+            )
 
     validated = df[list(ORDER_COLUMNS)].copy()
     validated["placed_at"] = pd.to_datetime(validated["placed_at"], utc=True)

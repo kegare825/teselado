@@ -6,13 +6,13 @@ import json
 from pathlib import Path
 
 import pandas as pd
+import shapely.geometry
 
 from teselado.ingest.loaders import load_orders_df, load_restaurants_df
 from teselado.tessellation.zones import Zone
 from teselado.viz.dashboard import export_dashboard
 from teselado.viz.export import load_geojson
 from teselado.viz.map import export_map
-import shapely.geometry
 
 
 def zones_from_geojson(data: dict) -> list[Zone]:

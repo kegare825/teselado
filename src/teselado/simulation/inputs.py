@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import shapely.geometry
-
 import pandas as pd
+import shapely.geometry
 
 from teselado.simulation.agents import Courier, Order, Restaurant
 from teselado.tessellation.zones import Zone
@@ -50,7 +49,7 @@ def build_orders(
     placed_minutes = _minutes_since_start(orders_df["placed_at"])
     built: list[Order] = []
 
-    for row, placed_at in zip(orders_df.itertuples(index=False), placed_minutes):
+    for row, placed_at in zip(orders_df.itertuples(index=False), placed_minutes, strict=True):
         restaurant = restaurants[row.restaurant_id]
         zone_id = assign_zone(float(row.lat), float(row.lng), zones)
         built.append(

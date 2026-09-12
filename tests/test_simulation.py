@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+import shapely.geometry
 
 from teselado.simulation.agents import Courier, Order
 from teselado.simulation.assigner import GreedyAssigner
@@ -7,7 +8,6 @@ from teselado.simulation.engine import SimulationParams, run_event_simulation, s
 from teselado.simulation.geo import travel_minutes
 from teselado.simulation.metrics import compute_metrics
 from teselado.tessellation.zones import Zone
-import shapely.geometry
 
 
 def _sample_zone() -> Zone:

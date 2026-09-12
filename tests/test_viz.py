@@ -107,9 +107,9 @@ def test_build_dashboard_html_contains_zone_table():
 
 
 def test_export_visualizations_from_pipeline_outputs(tmp_path: Path):
+    from teselado.config import Settings
     from teselado.ingest.synthetic import write_sample_dataset
     from teselado.pipeline import run_pipeline
-    from teselado.config import Settings
 
     data_dir = tmp_path / "data"
     output_dir = tmp_path / "outputs"

@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
+import shapely.geometry
 
 from teselado.config import Settings
 from teselado.ingest.synthetic import write_sample_dataset
@@ -11,7 +12,6 @@ from teselado.simulation.compare import compare_distance_models, compare_distanc
 from teselado.simulation.distance import OsmnxCalculator
 from teselado.simulation.engine import SimulationParams
 from teselado.tessellation.zones import Zone
-import shapely.geometry
 
 
 def _sample_zone() -> Zone:

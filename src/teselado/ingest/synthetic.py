@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -40,7 +40,7 @@ class CityBBox:
     label: str = ""
 
     @classmethod
-    def from_name(cls, city: str) -> "CityBBox":
+    def from_name(cls, city: str) -> CityBBox:
         if city not in CITY_BBOXES:
             raise ValueError(f"Unknown city '{city}'. Available: {list(CITY_BBOXES)}")
         raw = CITY_BBOXES[city]
@@ -87,7 +87,7 @@ def _generate_order_timestamps(n_orders: int, rng: np.random.Generator) -> pd.Se
 
     timestamps = [
         base + pd.Timedelta(hours=int(h), minutes=int(m), seconds=int(s))
-        for h, m, s in zip(hours, minutes, seconds)
+        for h, m, s in zip(hours, minutes, seconds, strict=True)
     ]
     return pd.Series(timestamps, dtype="datetime64[ns, UTC]")
 
@@ -126,7 +126,9 @@ def generate_orders(
     city = restaurants["city"].iloc[0]
 
     weights = np.ones(len(restaurants))
-    restaurant_ids = rng.choice(restaurants["restaurant_id"], size=n_orders, p=weights / weights.sum())
+    restaurant_ids = rng.choice(
+        restaurants["restaurant_id"], size=n_orders, p=weights / weights.sum()
+    )
     placed_at = _generate_order_timestamps(n_orders, rng)
 
     rows = []
@@ -163,7 +165,7 @@ def build_metadata(
         "seed": seed,
         "n_restaurants": n_restaurants,
         "n_orders": n_orders,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "bbox": {
             "lat_min": bbox.lat_min,
             "lat_max": bbox.lat_max,

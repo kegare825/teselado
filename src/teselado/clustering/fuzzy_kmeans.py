@@ -64,7 +64,7 @@ class FuzzyCMeans:
         self.membership_: np.ndarray | None = None
         self._degree = 2.0 / (m - 1)
 
-    def fit(self, data: np.ndarray) -> "FuzzyCMeans":
+    def fit(self, data: np.ndarray) -> FuzzyCMeans:
         """Compute fuzzy c-means clustering."""
         data = np.asarray(data, dtype=float)
         initial_centers = _kmeans_plusplus_init(data, self.k, self.seed)

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 
@@ -24,7 +24,7 @@ class KMeans:
         self.centroids_: dict[int, np.ndarray] = {}
         self.classifications_: dict[int, list[np.ndarray]] = {}
 
-    def fit(self, data: np.ndarray) -> "KMeans":
+    def fit(self, data: np.ndarray) -> KMeans:
         """Compute k-means clustering."""
         data = np.asarray(data, dtype=float)
         self.centroids_ = {i: data[i] for i in range(self.k)}

@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 import typer
@@ -24,7 +24,7 @@ app = typer.Typer(
 )
 
 
-class ClusterMethod(str, Enum):
+class ClusterMethod(StrEnum):
     """Clustering backend: hard K-Means or Fuzzy C-Means."""
 
     kmeans = "kmeans"
